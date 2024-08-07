@@ -14,21 +14,24 @@ import static org.quartz.SimpleScheduleBuilder.*;
 
 public class AlertRabbit {
 
-    private Properties loadProperties() throws IOException {
+    private static Properties loadProperties() throws IOException {
         Properties properties = new Properties();
-        try (InputStream inputStream = new FileInputStream("rabbit.properties")) {
+        try (InputStream inputStream = AlertRabbit.class.
+                getClassLoader().getResourceAsStream("rabbit.properties")) {
             properties.load(inputStream);
         }
         return properties;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        Properties properties = loadProperties();
+        int interval = Integer.parseInt(properties.getProperty("rabbit.interval"));
         try {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
             JobDetail job = newJob(Rabbit.class).build();
             SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(10)
+                    .withIntervalInSeconds(interval)
                     .repeatForever();
             Trigger trigger = newTrigger()
                     .startNow()
