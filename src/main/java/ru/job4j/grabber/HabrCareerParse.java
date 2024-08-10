@@ -58,23 +58,4 @@ public class HabrCareerParse implements Parse {
         }
         return posts;
     }
-
-    public static void main(String[] args) throws IOException {
-        for (int pageNumber = 1; pageNumber <= COUNT_PAGES; pageNumber++) {
-            String fullLink = "%s%s%d%s".formatted(SOURCE_LINK, PREFIX, pageNumber, SUFFIX);
-            Connection connection = Jsoup.connect(fullLink);
-            Document document = connection.get();
-            Elements rows = document.select(".vacancy-card__inner");
-            rows.forEach(row -> {
-                Element titleElement = row.select(".vacancy-card__title").first();
-                Element linkElement = titleElement.child(0);
-                Element dateElement = row.select(".basic-date").first();
-                String vacancyName = titleElement.text();
-                String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
-                String date = dateElement.attr("datetime");
-                System.out.printf("%s (%s) %s%n", vacancyName, date, link);
-            });
-        }
-    }
-
 }
