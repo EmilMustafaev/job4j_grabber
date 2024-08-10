@@ -40,8 +40,39 @@ public class Grabber implements Grab {
         return config;
     }
 
+    public Scheduler scheduler() throws SchedulerException {
+        return StdSchedulerFactory.getDefaultScheduler();
+    }
+
+    public Store store() throws Exception {
+        Properties config = getConfig();
+        return new PsqlStore(config);
+    }
+
     @Override
     public void init() throws SchedulerException {
+        JobDataMap data = new JobDataMap();
+        data.put("store", store);
+        data.put("parse", parse);
+        JobDetail job = newJob(GrabJob.class)
+                .usingJobData(data)
+                .build();
+        SimpleScheduleBuilder times = simpleSchedule()
+                .withIntervalInSeconds(time)
+                .repeatForever();
+        Trigger trigger = newTrigger()
+                .startNow()
+                .withSchedule(times)
+                .build();
+        scheduler.scheduleJob(job, trigger);
+    }
+
+    @Override
+    public void init(Parse parse, Store store, Scheduler scheduler) throws SchedulerException {
+        this.parse = parse;
+        this.store = store;
+        this.scheduler = scheduler;
+
         JobDataMap data = new JobDataMap();
         data.put("store", store);
         data.put("parse", parse);
@@ -96,12 +127,14 @@ public class Grabber implements Grab {
     public static void main(String[] args) throws Exception {
         Grabber grab = new Grabber();
         Properties config = grab.getConfig();
-        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-        scheduler.start();
-        Store store = new PsqlStore(config);
-        var parse = new HabrCareerParse(new HabrCareerDateTimeParser());
         int time = Integer.parseInt(config.getProperty("time"));
-        new Grabber(parse, store, scheduler, time).init();
+
+        Scheduler scheduler = grab.scheduler();
+        Store store = grab.store();
+
+        grab = new Grabber(new HabrCareerParse(new HabrCareerDateTimeParser()), store, scheduler, time);
+        grab.init(new HabrCareerParse(new HabrCareerDateTimeParser()), store, scheduler);
+
         grab.web(store);
     }
 }
