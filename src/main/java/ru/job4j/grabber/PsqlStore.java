@@ -27,14 +27,14 @@ public class PsqlStore implements Store {
         return new Post(
                 resultSet.getInt("id"),
                 resultSet.getString("name"),
-                resultSet.getString("text_vacan"),
                 resultSet.getString("link"),
+                resultSet.getString("text_vacan"),
                 resultSet.getTimestamp("created").toLocalDateTime());
     }
 
     @Override
     public void save(Post post) {
-        String sql = "INSERT INTO post(name, text_vacan, link, created)"
+        String sql = "INSERT INTO post(name, link, text_vacan, created)"
                 + "VALUES(?, ?, ?, ?)"
                 + "ON CONFLICT (link) DO UPDATE SET "
                 + "name = EXCLUDED.name, "
@@ -43,8 +43,8 @@ public class PsqlStore implements Store {
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, post.getTitle());
-            preparedStatement.setString(2, post.getDescription());
-            preparedStatement.setString(3, post.getLink());
+            preparedStatement.setString(2, post.getLink());
+            preparedStatement.setString(3, post.getDescription());
             preparedStatement.setTimestamp(4, Timestamp.valueOf(post.getCreated()));
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
